@@ -7,10 +7,19 @@ var multer = require('multer');
 var bodyParser = require('body-parser');
 var path = require('path');
 var mongoose = require("mongoose");
-mongoose.connect("mongodb://localhost/productDB");
+require('dotenv').config();
 var fs = require('fs');
 var product = require("./model/product.js");
 var user = require("./model/user.js");
+
+mongoose.connect(process.env.MONGODB_URI);
+mongoose.connection.on('connected', () => {
+  console.log('Connected to the database');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('Database connection error:', err);
+});
 
 var dir = './uploads';
 var upload = multer({
