@@ -7,19 +7,10 @@ var multer = require('multer');
 var bodyParser = require('body-parser');
 var path = require('path');
 var mongoose = require("mongoose");
-require('dotenv').config();
+mongoose.connect("mongodb://localhost/productDB");
 var fs = require('fs');
 var product = require("./model/product.js");
 var user = require("./model/user.js");
-
-mongoose.connect(process.env.MONGODB_URI);
-mongoose.connection.on('connected', () => {
-  console.log('Connected to the database');
-});
-
-mongoose.connection.on('error', (err) => {
-  console.error('Database connection error:', err);
-});
 
 var dir = './uploads';
 var upload = multer({
@@ -38,7 +29,7 @@ var upload = multer({
   fileFilter: function (req, file, callback) {
     var ext = path.extname(file.originalname);
     if (ext !== '.png' && ext !== '.jpg' && ext !== '.jpeg') {
-      return callback( null, false);
+      return callback(/*res.end('Only images are allowed')*/ null, false);
     }
     callback(null, true);
   }
@@ -54,7 +45,7 @@ app.use("/", (req, res, next) => {
     if (req.path == "/login" || req.path == "/register" || req.path == "/") {
       next();
     } else {
-      /* jwt token if authorized */
+      /* decode jwt token if authorized */
       jwt.verify(req.headers.token, 'shhhhh11111', function (err, decoded) {
         if (decoded && decoded.user) {
           req.user = decoded;
@@ -119,9 +110,26 @@ app.post("/login", (req, res) => {
     });
   }
 
+
+
+  function checkUserAndGenerateToken(data, req, res) {
+    jwt.sign({ user: data.username, id: data._id }, 'shhhhh11111', { expiresIn: '1d' }, (err, token) => {
+      if (err) {
+        res.status(400).json({
+          status: false,
+          errorMessage: err,
+        });
+      } else {
+        res.json({
+          message: 'Login Successfully.',
+          token: token,
+          status: true
+        });
+      }
+    });
+  }
 });
 
-/* register api */
 app.post("/register", (req, res) => {
   try {
     if (req.body && req.body.username && req.body.password) {
@@ -246,7 +254,6 @@ app.post("/update-user-profile", (req, res) => {
 });
 
 
-
-app.listen(8000, () => {
-  console.log("Server is Running On port 8000");
+app.listen(8080, () => {
+  console.log("Server is Running On port 8080");
 });
